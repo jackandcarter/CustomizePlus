@@ -39,6 +39,7 @@ public class BoneEditorPanel
 
     private bool _isShowLiveBones;
     private bool _isMirrorModeEnabled;
+    private bool _applyActiveProfile;
 
     private Dictionary<BoneData.BoneFamily, bool> _groupExpandedState = new();
 
@@ -82,6 +83,7 @@ public class BoneEditorPanel
 
         _isShowLiveBones = configuration.EditorConfiguration.ShowLiveBones;
         _isMirrorModeEnabled = configuration.EditorConfiguration.BoneMirroringEnabled;
+        _applyActiveProfile = configuration.EditorConfiguration.ApplyActiveProfileInEditor;
         _precision = configuration.EditorConfiguration.EditorValuesPrecision;
         _editingAttribute = configuration.EditorConfiguration.EditorMode;
         _favoriteBones = new HashSet<string>(_configuration.EditorConfiguration.FavoriteBones);
@@ -257,6 +259,15 @@ public class BoneEditorPanel
 
                 using (var disabled = ImRaii.Disabled(!_isUnlocked))
                 {
+                    ImGui.SameLine();
+                    if (CtrlHelper.Checkbox("Apply Active Profile", ref _applyActiveProfile))
+                    {
+                        _configuration.EditorConfiguration.ApplyActiveProfileInEditor = _applyActiveProfile;
+                        _configuration.Save();
+                        _editorManager.SetActiveProfileApplicationEnabled(_applyActiveProfile);
+                    }
+                    CtrlHelper.AddHoverText("Apply templates from the currently active profile while editing.");
+
                     ImGui.SameLine();
                     if (CtrlHelper.Checkbox("Show Live Bones", ref _isShowLiveBones))
                     {

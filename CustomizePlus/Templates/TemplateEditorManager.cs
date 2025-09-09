@@ -29,6 +29,7 @@ public class TemplateEditorManager : IDisposable
     private readonly TemplateManager _templateManager;
     private readonly IClientState _clientState;
     private readonly PluginConfiguration _configuration;
+    private readonly ProfileManager _profileManager;
 
     /// <summary>
     /// Reference to the original template which is currently being edited, should not be edited!
@@ -84,13 +85,18 @@ public class TemplateEditorManager : IDisposable
 
     public bool IsKeepOnlyEditorProfileActive { get; set; } //todo
 
+    public bool ActiveProfileApplicationEnabled => _activeProfileApplicationEnabled;
+
+    private bool _activeProfileApplicationEnabled;
+
     public TemplateEditorManager(
         TemplateChanged @event,
         Logger logger,
         TemplateManager templateManager,
         GameObjectService gameObjectService,
         IClientState clientState,
-        PluginConfiguration configuration)
+        PluginConfiguration configuration,
+        ProfileManager profileManager)
     {
         _event = @event;
         _logger = logger;
@@ -98,6 +104,7 @@ public class TemplateEditorManager : IDisposable
         _gameObjectService = gameObjectService;
         _clientState = clientState;
         _configuration = configuration;
+        _profileManager = profileManager;
 
         _clientState.Login += OnLogin;
 
@@ -146,6 +153,8 @@ public class TemplateEditorManager : IDisposable
         HasChanges = false;
         IsEditorActive = true;
 
+        SetActiveProfileApplicationEnabled(_configuration.EditorConfiguration.ApplyActiveProfileInEditor);
+
         _event.Invoke(TemplateChanged.Type.EditorEnabled, template, Character);
 
         return true;
@@ -168,6 +177,7 @@ public class TemplateEditorManager : IDisposable
         CurrentlyEditedTemplateId = Guid.Empty;
         CurrentlyEditedTemplate = null;
         EditorProfile.Enabled = false;
+        _activeProfileApplicationEnabled = false;
         EditorProfile.Templates.Clear();
         IsEditorActive = false;
         HasChanges = false;
@@ -223,7 +233,60 @@ public class TemplateEditorManager : IDisposable
 
         _event.Invoke(TemplateChanged.Type.EditorCharacterChanged, CurrentlyEditedTemplate, (character, EditorProfile));
 
+        if (_activeProfileApplicationEnabled)
+            RebuildEditorProfileTemplates();
+
         return true;
+    }
+
+    public void SetActiveProfileApplicationEnabled(bool enabled)
+        => SetActiveProfileApplicationEnabled(enabled, true);
+
+    private void SetActiveProfileApplicationEnabled(bool enabled, bool fireEvent)
+    {
+        if (!IsEditorActive || IsEditorPaused)
+            return;
+
+        if (_activeProfileApplicationEnabled == enabled)
+            return;
+
+        _activeProfileApplicationEnabled = enabled;
+
+        RebuildEditorProfileTemplates();
+
+        if (fireEvent)
+            _event.Invoke(enabled
+                ? TemplateChanged.Type.ActiveProfileApplicationEnabled
+                : TemplateChanged.Type.ActiveProfileApplicationDisabled,
+                CurrentlyEditedTemplate,
+                Character);
+    }
+
+    private void RebuildEditorProfileTemplates()
+    {
+        if (!IsEditorActive || CurrentlyEditedTemplate == null)
+            return;
+
+        var edited = CurrentlyEditedTemplate;
+        EditorProfile.Templates.Clear();
+
+        if (_activeProfileApplicationEnabled)
+        {
+            foreach (var profile in _profileManager.GetEnabledProfilesByActor(Character))
+            {
+                if (profile == EditorProfile)
+                    continue;
+
+                foreach (var template in profile.Templates)
+                {
+                    if (profile.DisabledTemplates.Contains(template.UniqueId))
+                        continue;
+                    EditorProfile.Templates.Add(template);
+                }
+            }
+        }
+
+        EditorProfile.Templates.Add(edited);
     }
 
     /// <summary>

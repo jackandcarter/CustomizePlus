@@ -148,6 +148,8 @@ public abstract class TemplateComboBase : FilterComboCache<Tuple<Template, strin
             TemplateChanged.Type.Created => true,
             TemplateChanged.Type.Renamed => true,
             TemplateChanged.Type.Deleted => true,
+            TemplateChanged.Type.ActiveProfileApplicationEnabled => _isCurrentSelectionDirty,
+            TemplateChanged.Type.ActiveProfileApplicationDisabled => _isCurrentSelectionDirty,
             _ => _isCurrentSelectionDirty,
         };
     }
