@@ -146,6 +146,8 @@ public class ProfilePanel
         if (!child || _selector.Selected == null)
             return;
 
+        using var disabledEditor = ImRaii.Disabled(_templateEditorManager.IsEditorActive && _templateEditorManager.ActiveProfileApplicationEnabled);
+
         DrawEnabledSetting();
 
         ImGui.Separator();

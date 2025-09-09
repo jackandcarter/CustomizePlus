@@ -94,6 +94,8 @@ public class PluginConfiguration : IPluginConfiguration, ISavable
 
         public ActorIdentifier PreviewCharacter { get; set; } = ActorIdentifier.Invalid;
 
+        public bool ApplyActiveProfileInEditor { get; set; } = false;
+
         public int EditorValuesPrecision { get; set; } = 3;
 
         public BoneAttribute EditorMode { get; set; } = BoneAttribute.Position;

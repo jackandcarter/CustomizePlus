@@ -423,7 +423,9 @@ public unsafe sealed class ArmatureManager : IDisposable
             type is not TemplateChanged.Type.DeletedBone &&
             type is not TemplateChanged.Type.EditorCharacterChanged &&
             type is not TemplateChanged.Type.EditorEnabled &&
-            type is not TemplateChanged.Type.EditorDisabled)
+            type is not TemplateChanged.Type.EditorDisabled &&
+            type is not TemplateChanged.Type.ActiveProfileApplicationEnabled &&
+            type is not TemplateChanged.Type.ActiveProfileApplicationDisabled)
             return;
 
         if (type == TemplateChanged.Type.NewBone ||
@@ -468,15 +470,15 @@ public unsafe sealed class ArmatureManager : IDisposable
         }
 
         if (type == TemplateChanged.Type.EditorEnabled ||
-            type == TemplateChanged.Type.EditorDisabled)
+            type == TemplateChanged.Type.EditorDisabled ||
+            type == TemplateChanged.Type.ActiveProfileApplicationEnabled ||
+            type == TemplateChanged.Type.ActiveProfileApplicationDisabled)
         {
             ActorIdentifier actor;
-            bool hasChanges;
-
-            if(type == TemplateChanged.Type.EditorEnabled)
-                actor = (ActorIdentifier)arg3;
+            if (type == TemplateChanged.Type.EditorDisabled)
+                (actor, _) = ((ActorIdentifier, bool))arg3;
             else
-                (actor, hasChanges) = ((ActorIdentifier, bool))arg3;
+                actor = (ActorIdentifier)arg3;
 
             foreach (var armature in GetArmaturesForCharacter(actor))
             {

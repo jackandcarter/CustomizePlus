@@ -265,6 +265,8 @@ public class TemplateFileSystemSelector : FileSystemSelector<Template, TemplateS
             case TemplateChanged.Type.Deleted:
             case TemplateChanged.Type.Renamed:
             case TemplateChanged.Type.ReloadedAll:
+            case TemplateChanged.Type.ActiveProfileApplicationEnabled:
+            case TemplateChanged.Type.ActiveProfileApplicationDisabled:
                 SetFilterDirty();
                 break;
         }

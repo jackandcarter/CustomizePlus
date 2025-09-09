@@ -81,6 +81,9 @@ public sealed class TemplateFileSystem : FileSystem<Template>, IDisposable, ISav
                 if (old == leaf2.Name || leaf2.Name.IsDuplicateName(out var baseName, out _) && baseName == old)
                     RenameWithDuplicates(leaf2, template.Name);
                 return;
+            case TemplateChanged.Type.ActiveProfileApplicationEnabled:
+            case TemplateChanged.Type.ActiveProfileApplicationDisabled:
+                return;
         }
     }
 

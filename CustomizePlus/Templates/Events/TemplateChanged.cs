@@ -20,6 +20,8 @@ public class TemplateChanged() : EventWrapper<TemplateChanged.Type, Template?, o
         EditorEnabled,
         EditorDisabled,
         EditorCharacterChanged,
+        ActiveProfileApplicationEnabled,
+        ActiveProfileApplicationDisabled,
         ReloadedAll,
         WriteProtection
     }
