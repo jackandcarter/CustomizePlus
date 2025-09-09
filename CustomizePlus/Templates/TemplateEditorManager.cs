@@ -83,8 +83,6 @@ public class TemplateEditorManager : IDisposable
         }
     }
 
-    public bool IsKeepOnlyEditorProfileActive { get; set; } //todo
-
     public bool ActiveProfileApplicationEnabled => _activeProfileApplicationEnabled;
 
     private bool _activeProfileApplicationEnabled;
