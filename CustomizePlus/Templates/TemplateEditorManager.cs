@@ -6,6 +6,7 @@ using CustomizePlus.GameData.Extensions;
 using CustomizePlus.Profiles;
 using CustomizePlus.Profiles.Data;
 using CustomizePlus.Profiles.Enums;
+using CustomizePlus.Profiles.Events;
 using CustomizePlus.Templates.Data;
 using CustomizePlus.Templates.Events;
 using Dalamud.Plugin.Services;
@@ -30,6 +31,7 @@ public class TemplateEditorManager : IDisposable
     private readonly IClientState _clientState;
     private readonly PluginConfiguration _configuration;
     private readonly ProfileManager _profileManager;
+    private readonly ProfileChanged _profileChangedEvent;
 
     /// <summary>
     /// Reference to the original template which is currently being edited, should not be edited!
@@ -94,7 +96,8 @@ public class TemplateEditorManager : IDisposable
         GameObjectService gameObjectService,
         IClientState clientState,
         PluginConfiguration configuration,
-        ProfileManager profileManager)
+        ProfileManager profileManager,
+        ProfileChanged profileChangedEvent)
     {
         _event = @event;
         _logger = logger;
@@ -103,8 +106,10 @@ public class TemplateEditorManager : IDisposable
         _clientState = clientState;
         _configuration = configuration;
         _profileManager = profileManager;
+        _profileChangedEvent = profileChangedEvent;
 
         _clientState.Login += OnLogin;
+        _profileChangedEvent.Subscribe(OnProfileChange, ProfileChanged.Priority.TemplateManager);
 
         EditorProfile = new Profile()
         {
@@ -120,6 +125,7 @@ public class TemplateEditorManager : IDisposable
     public void Dispose()
     {
         _clientState.Login -= OnLogin;
+        _profileChangedEvent.Unsubscribe(OnProfileChange);
     }
 
     /// <summary>
@@ -258,6 +264,52 @@ public class TemplateEditorManager : IDisposable
                 : TemplateChanged.Type.ActiveProfileApplicationDisabled,
                 CurrentlyEditedTemplate,
                 Character);
+    }
+
+    private void OnProfileChange(ProfileChanged.Type type, Profile? profile, object? arg3 = null)
+    {
+        if (!_activeProfileApplicationEnabled)
+            return;
+
+        if (type == ProfileChanged.Type.ReloadedAll ||
+            type == ProfileChanged.Type.ChangedDefaultProfile ||
+            type == ProfileChanged.Type.ChangedDefaultLocalPlayerProfile)
+        {
+            RebuildEditorProfileTemplates();
+            return;
+        }
+
+        if (profile == null)
+            return;
+
+        var affectsEditor = profile.Characters.Contains(Character);
+
+        if (!affectsEditor && type == ProfileChanged.Type.RemovedCharacter && arg3 is ActorIdentifier removed)
+            affectsEditor = removed.Equals(Character);
+        if (!affectsEditor && type == ProfileChanged.Type.AddedCharacter && arg3 is ActorIdentifier added)
+            affectsEditor = added.Equals(Character);
+
+        if (!affectsEditor)
+            return;
+
+        switch (type)
+        {
+            case ProfileChanged.Type.Toggled:
+            case ProfileChanged.Type.PriorityChanged:
+            case ProfileChanged.Type.AddedCharacter:
+            case ProfileChanged.Type.RemovedCharacter:
+            case ProfileChanged.Type.AddedTemplate:
+            case ProfileChanged.Type.RemovedTemplate:
+            case ProfileChanged.Type.EnabledTemplate:
+            case ProfileChanged.Type.DisabledTemplate:
+            case ProfileChanged.Type.MovedTemplate:
+            case ProfileChanged.Type.ChangedTemplate:
+            case ProfileChanged.Type.Deleted:
+            case ProfileChanged.Type.TemporaryProfileAdded:
+            case ProfileChanged.Type.TemporaryProfileDeleted:
+                RebuildEditorProfileTemplates();
+                break;
+        }
     }
 
     private void RebuildEditorProfileTemplates()
